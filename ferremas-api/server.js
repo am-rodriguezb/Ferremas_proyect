@@ -8,7 +8,7 @@ app.use('/api/clientes', require('./routes/usuarios/clientes'));
 app.use('/api/auth', require('./routes/usuarios/auth'));
 
 // PRODUCTOS
-app.use('/api/productos', require('./routes/productos/productos'));
+app.use('/api/productos', require('./routes/productos/products'));
 
 // INVENTARIO
 app.use('/api/inventario', require('./routes/inventario/inventario'));
