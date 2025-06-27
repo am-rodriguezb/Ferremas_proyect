@@ -1,47 +1,135 @@
 // src/components/LoginModal.jsx
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const LoginModal = ({ isOpen, onClose }) => {
-    const [activeTab, setActiveTab] = useState('login');
+    const [identificador, setIdentificador] = useState('');
+    const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [error, setError] = useState('');
+    const navigate = useNavigate();
 
     if (!isOpen) return null;
 
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setError('');
+        try {
+            const res = await axios.post('http://localhost:4000/api/clientes/login', {
+                identificador,
+                password
+            });
+
+            const { token, perfil, username, user_id } = res.data;
+
+            if (perfil && perfil !== 'Cliente') {
+                setError('Solo los clientes pueden iniciar sesión desde aquí.');
+                return;
+            }
+
+            // Guarda en localStorage
+            localStorage.setItem('token', token);
+            localStorage.setItem('perfil', perfil); // para verificar si es 'Cliente'
+            localStorage.setItem('username', username); // para mostrar saludo
+
+
+            onClose(); // Cierra modal
+            window.location.reload(); // Refresca para que el Home se actualice
+        } catch (err) {
+            setError('Credenciales incorrectas o usuario no encontrado');
+            console.error('Login error:', err);
+        }
+    };
+
     return (
-        <div className="login-modal" style={{ display: 'flex' }}>
-        <div className="modal-content">
-            <div className="modal-header">
-            <h2 className="modal-title">Iniciar sesión</h2>
-            <button className="close-modal" onClick={onClose}>&times;</button>
-            </div>
+        <div className="login-modal-overlay" style={overlayStyles}>
+            <div className="login-modal-content p-4 rounded shadow" style={modalStyles}>
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h4 className="m-0">Iniciar sesión</h4>
+                    <button onClick={onClose} className="btn-close"></button>
+                </div>
 
-            <div className="tabs">
-            <button className={`tab ${activeTab === 'login' ? 'active' : ''}`} onClick={() => setActiveTab('login')}>
-                Iniciar Sesión
-            </button>
-            <button className={`tab ${activeTab === 'registro' ? 'active' : ''}`} onClick={() => setActiveTab('registro')}>
-                Registrarse
-            </button>
-            </div>
+                {error && <div className="alert alert-danger py-2">{error}</div>}
 
-            <div className={`tab-content ${activeTab === 'login' ? 'active' : ''}`} id="login-content">
-            <div className="form-group">
-                <label className="form-label">Usuario</label>
-                <input className="form-input" type="text" />
-            </div>
-            <div className="form-group">
-                <label className="form-label">Contraseña</label>
-                <input className="form-input" type="password" />
-            </div>
-            <button className="form-submit">Entrar</button>
-            </div>
+                <form onSubmit={handleLogin}>
+                    <div className="mb-3">
+                        <label className="form-label">Usuario o Correo</label>
+                        <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Nombre de usuario o correo"
+                            value={identificador}
+                            onChange={(e) => setIdentificador(e.target.value)}
+                            required
+                        />
+                    </div>
 
-            <div className={`tab-content ${activeTab === 'registro' ? 'active' : ''}`} id="registro-content">
-            {/* Formulario de registro aquí */}
-            <p>Formulario de registro (en desarrollo)</p>
+                    <div className="mb-3">
+                        <label className="form-label">Contraseña</label>
+                        <div className="input-group">
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                className="form-control"
+                                placeholder="Contraseña"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                            />
+                            <button
+                                type="button"
+                                className="btn btn-outline-secondary"
+                                onClick={() => setShowPassword((prev) => !prev)}
+                                tabIndex={-1}
+                                aria-label={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
+                            >
+                                {showPassword ? (
+                                    <i className="bi bi-eye-slash"></i>
+                                ) : (
+                                    <i className="bi bi-eye"></i>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+
+                    <button className="btn btn-primary w-100">Entrar</button>
+                </form>
+
+                <p className="mt-3 text-center">
+                    ¿No tienes cuenta?{' '}
+                    <button
+                        className="btn btn-link p-0"
+                        onClick={() => {
+                            onClose();
+                            navigate('/registro');
+                        }}
+                    >
+                        Regístrate aquí
+                    </button>
+                </p>
             </div>
-        </div>
         </div>
     );
 };
 
 export default LoginModal;
+
+const overlayStyles = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    width: '100vw',
+    height: '100vh',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    zIndex: 999,
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+};
+
+const modalStyles = {
+    backgroundColor: '#fff',
+    color: '#000',
+    width: '100%',
+    maxWidth: '400px',
+};

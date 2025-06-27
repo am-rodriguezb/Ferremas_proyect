@@ -1,77 +1,142 @@
 const db = require('../../database');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+require('dotenv').config();
 
-// Obtener todos los clientes
-exports.getAll = async (req, res) => {
+// Función para generar token
+const generateToken = (cliente) => {
+    return jwt.sign(
+        {
+            cliente_id: cliente.cliente_id,
+            username: cliente.username,
+            correo: cliente.correo
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '8h' }
+    );
+};
+
+// 🔐 LOGIN DE CLIENTES
+exports.login = async (req, res) => {
+    const { identificador, password } = req.body;
+
     try {
-        const [rows] = await db.query(`
-        SELECT c.*, u.username, u.email, u.first_name, u.last_name, u.telefono
-        FROM cliente c
-        JOIN user u ON c.cliente_id = u.user_id
-        `);
-        res.json(rows);
+        // Buscar cliente por username o correo
+        const [clientes] = await db.query(
+            `SELECT * FROM cliente WHERE username = ? OR correo = ?`,
+            [identificador, identificador]
+        );
+
+        if (clientes.length === 0) {
+            return res.status(401).json({ message: 'Cliente no encontrado' });
+        }
+
+        const cliente = clientes[0];
+        const match = await bcrypt.compare(password, cliente.password);
+
+        if (!match) {
+            return res.status(401).json({ message: 'Contraseña incorrecta' });
+        }
+
+        const token = generateToken(cliente);
+
+        res.json({
+            message: 'Login exitoso',
+            token,
+            cliente_id: cliente.cliente_id,
+            username: cliente.username
+        });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Error al iniciar sesión:', err);
+        res.status(500).json({ message: 'Error en el servidor' });
     }
-    };
+};
 
-// Obtener cliente por ID
-    exports.getById = async (req, res) => {
+// 🔐 REGISTRO DE CLIENTES
+exports.register = async (req, res) => {
+    const { username, email, password, nombre, apellido, telefono, direccion, region, comuna } = req.body;
+
+    if (!username || !email || !password || !nombre || !apellido || !direccion || !region || !comuna) {
+        return res.status(400).json({ message: 'Faltan campos obligatorios' });
+    }
+
     try {
-        const [rows] = await db.query(`
-        SELECT c.*, u.username, u.email, u.first_name, u.last_name, u.telefono
-        FROM cliente c
-        JOIN user u ON c.cliente_id = u.user_id
-        WHERE c.cliente_id = ?
-        `, [req.params.id]);
+        // Validar que no exista usuario o email repetido en clientes
+        const [clienteExistente] = await db.query(
+            'SELECT * FROM cliente WHERE username = ? OR correo = ?',
+            [username, email]
+        );
+        if (clienteExistente.length > 0) {
+            return res.status(409).json({ message: 'El nombre de usuario o correo ya están registrados' });
+        }
 
-        if (rows.length === 0) return res.status(404).json({ error: 'Cliente no encontrado' });
+        const hashedPassword = await bcrypt.hash(password, 12);
+
+        // Insertar nuevo cliente
+        const [resultado] = await db.query(
+            `INSERT INTO cliente (username, correo, password, nombre, apellido, direccion, telefono)
+            VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [username, email, hashedPassword, nombre, apellido, direccion, telefono]
+        );
+
+        res.status(201).json({ message: 'Registro exitoso', cliente_id: resultado.insertId });
+    } catch (err) {
+        console.error('Error al registrar cliente:', err);
+        res.status(500).json({ message: 'Error en el servidor' });
+    }
+};
+
+// GET /api/clientes/perfil
+// controllers/clientesController.js
+
+exports.getPerfil = async (req, res) => {
+    const userId = req.user.cliente_id; // Asumiendo que el ID del cliente está en req.user
+
+    try {
+        const [rows] = await db.query(
+            `SELECT c.cliente_id, c.username, c.correo, c.nombre, c.apellido,
+                    c.direccion, c.telefono, c.region_id, r.nombre_region,
+                    c.comuna_id, co.nombre_comuna
+            FROM cliente c
+            LEFT JOIN region r ON c.region_id = r.region_id
+            LEFT JOIN comuna co ON c.comuna_id = co.comuna_id
+            WHERE c.cliente_id = ?`,
+            [userId]
+        );
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Cliente no encontrado' });
+        }
 
         res.json(rows[0]);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Error al obtener perfil del cliente:', err);
+        res.status(500).json({ message: 'Error en el servidor' });
     }
 };
 
-// Crear cliente (requiere un usuario ya creado)
-exports.create = async (req, res) => {
+// controllers/clientesController.js
+
+exports.actualizarPerfil = async (req, res) => {
+    const userId = req.user.cliente_id;
+    const { nombre, apellido, direccion, telefono, region_id, comuna_id } = req.body;
+
     try {
-        const { cliente_id, rut, correo, nombre, apellido, direccion, telefono } = req.body;
+        const [result] = await db.query(
+            `UPDATE cliente
+            SET nombre = ?, apellido = ?, direccion = ?, telefono = ?, region_id = ?, comuna_id = ?
+            WHERE cliente_id = ?`,
+            [nombre, apellido, direccion, telefono, region_id, comuna_id, userId]
+        );
 
-        const [result] = await db.query(`
-        INSERT INTO cliente (cliente_id, rut, correo, nombre, apellido, direccion, telefono)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        `, [cliente_id, rut, correo, nombre, apellido, direccion, telefono]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'No se pudo actualizar' });
+        }
 
-        res.status(201).json({ message: 'Cliente creado', cliente_id });
+        res.json({ message: 'Perfil actualizado correctamente' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Error al actualizar perfil:', err);
+        res.status(500).json({ message: 'Error en el servidor' });
     }
 };
 
-// Actualizar cliente
-exports.update = async (req, res) => {
-    try {
-        const [result] = await db.query(`
-        UPDATE cliente SET ? WHERE cliente_id = ?
-        `, [req.body, req.params.id]);
-
-        res.json({ message: 'Cliente actualizado', cambios: result.affectedRows });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};
-
-// Eliminar cliente
-exports.delete = async (req, res) => {
-    try {
-        const [result] = await db.query(`
-        DELETE FROM cliente WHERE cliente_id = ?
-        `, [req.params.id]);
-
-        if (result.affectedRows === 0) return res.status(404).json({ error: 'Cliente no encontrado' });
-
-        res.json({ message: 'Cliente eliminado' });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-};

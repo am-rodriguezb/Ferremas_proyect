@@ -1,13 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('../../controllers/usuarios/clientesController');
+const controller = require('../../controllers/usuarios/usersController');
 const { verifyToken, permitRole } = require('../../middleware/authMiddleware');
 
-// Rutas protegidas
-router.get('/', verifyToken, permitRole('Administrador'), controller.getAll);
-router.get('/:id', verifyToken, permitRole('Administrador'), controller.getById);
-router.post('/', verifyToken, permitRole('Administrador'), controller.create);
-router.put('/:id', verifyToken, permitRole('Administrador'), controller.update);
-router.delete('/:id', verifyToken, permitRole('Administrador'), controller.delete);
+// Solo administradores
+router.use(verifyToken);
+router.use(permitRole('Administrador'));
+
+router.get('/', controller.getAll);
+router.get('/:id', controller.getById);
+router.post('/', controller.create);
+router.put('/:id', controller.update);
+router.delete('/:id', controller.delete);
 
 module.exports = router;
+// Este archivo define las rutas relacionadas con los usuarios.
+// Aquí se importa el controlador de usuarios y se define la ruta para las operaciones CRUD de usuarios

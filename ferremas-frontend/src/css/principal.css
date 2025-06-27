@@ -23,6 +23,11 @@
             padding: 1rem 0;
         }
         
+        header.sticky-top {
+        background-color: var(--secondary) !important;
+        color: white !important;
+        }
+
         .container {
             width: 90%;
             max-width: 1200px;
@@ -84,6 +89,12 @@
         
         .user-actions a:hover {
             background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .user-actions .btn {
+            background-color: var(--primary) !important;
+            color: white !important;
+            border: none !important;
         }
         
         nav {
@@ -170,7 +181,7 @@
         }
         
         .btn:hover {
-            background-color: #d62b3a;
+            background-color: #d62b3a !important;
         }
         
         .featured-products {
@@ -295,6 +306,7 @@
             align-items: center;
             justify-content: center;
         }
+        
         
         .modal-content {
             background-color: white;

@@ -7,13 +7,20 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// USUARIOS
-app.use('/api/users', require('./routes/usuarios/users'));
-app.use('/api/clientes', require('./routes/usuarios/clientes'));
-app.use('/api/auth', require('./routes/usuarios/auth'));
+// RUTAS DE AUTENTICACIÓN Y USUARIOS
+const authRoutes = require('./routes/usuarios/auth');               // login admin
+const usuariosRoutes = require('./routes/usuarios/usuarioRoutes');       // login empleados
+const userRoutes = require('./routes/usuarios/users');               // CRUD empleados (protegido)
+const clientesRoutes = require('./routes/usuarios/clientes');       // login/register cliente
+
+app.use('/api/auth', authRoutes);
+app.use('/api/usuario', usuariosRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/clientes', clientesRoutes);
 
 // PRODUCTOS
 app.use('/api/productos', require('./routes/productos/products'));
+app.use('/api/categorias', require('./routes/productos/categoria'));
 
 // INVENTARIO
 app.use('/api/inventario', require('./routes/inventario/inventario'));
@@ -27,6 +34,8 @@ app.use('/api/pagos', require('./routes/pedidos/pagos'));
 // REPORTES
 app.use('/api/reportes', require('./routes/reportes/reportes'));
 
+// COMUNAS Y REGIONES
+app.use('/api', require('./routes/api/comunas'));
 
 const PORT = 4000;
 app.listen(PORT, () => {

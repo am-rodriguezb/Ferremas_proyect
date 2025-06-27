@@ -1,29 +1,29 @@
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
 
-// Verifica si el token es válido
+// Verificar si hay token válido
 exports.verifyToken = (req, res, next) => {
     const authHeader = req.headers.authorization;
+    const token = authHeader?.split(' ')[1];
 
-    if (!authHeader) return res.status(401).json({ error: 'Token requerido' });
+    if (!token) return res.status(401).json({ message: 'Token requerido' });
 
-    const token = authHeader.split(' ')[1];
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) return res.status(403).json({ message: 'Token inválido' });
 
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded; // guarda los datos del usuario en la request
+        req.user = decoded;
         next();
-    } catch (err) {
-        return res.status(403).json({ error: 'Token inválido o expirado' });
-    }
+    });
 };
 
-// Middleware para verificar rol
-exports.permitRole = (...perfilesPermitidos) => {
+// Middleware para limitar acceso por rol
+exports.permitRole = (...rolesPermitidos) => {
     return (req, res, next) => {
-        if (!req.user || !perfilesPermitidos.includes(req.user.perfil)) {
-        return res.status(403).json({ error: 'Acceso denegado: rol no permitido' });
+        const user = req.user;
+        if (!user || !rolesPermitidos.includes(user.perfil)) {
+        return res.status(403).json({ message: 'No tienes permisos para esta acción' });
         }
         next();
     };
 };
+

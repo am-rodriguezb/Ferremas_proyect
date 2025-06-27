@@ -3,48 +3,46 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
-exports.login = async (req, res) => {
-    const { username, password } = req.body;
+const generateToken = (user) => {
+    return jwt.sign(
+        {
+        user_id: user.user_id,
+        username: user.username,
+        perfil: user.perfil
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '8h' }
+    );
+};
 
-    if (!username || !password) {
-        return res.status(400).json({ 
-            error: 'Username y password son requeridos'
-        });
-    }
+// Login exclusivo para ADMINISTRADOR
+exports.login = async (req, res) => {
+    const { identificador, password } = req.body;
 
     try {
-        const [rows] = await db.query('SELECT * FROM user WHERE username = ?', [username]);
+    const [users] = await db.query(
+      `SELECT * FROM user WHERE (username = ? OR email = ?) AND perfil = 'Administrador'`,
+        [identificador, identificador]
+    );
 
-        if (rows.length === 0) {
-            return res.status(404).json({ error: 'Usuario no encontrado' });
-        }
+    if (users.length === 0) return res.status(401).json({ message: 'Admin no encontrado' });
 
-        const user = rows[0];
-        const isMatch = await bcrypt.compare(password, user.password);
-        
-        if (!isMatch) {
-            return res.status(401).json({ error: 'Contraseña incorrecta' });
-        }
+    const admin = users[0];
+    const match = await bcrypt.compare(password, admin.password);
 
-        const token = jwt.sign(
-            {
-                user_id: user.user_id,
-                username: user.username,
-                perfil: user.perfil
-            },
-            process.env.JWT_SECRET,
-            { expiresIn: '8h' }
-        );
+    if (!match) return res.status(401).json({ message: 'Contraseña incorrecta' });
 
-        res.json({
-            message: 'Login exitoso',
-            token,
-            perfil: user.perfil,
-            user_id: user.user_id
+    const token = generateToken(admin);
+
+    res.json({
+        message: 'Login exitoso',
+        token,
+        perfil: admin.perfil,
+        user_id: admin.user_id,
+        username: admin.username
         });
-
     } catch (err) {
-        console.error('Error en login:', err);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        console.error('Error al iniciar sesión admin:', err);
+        res.status(500).json({ message: 'Error en el servidor' });
     }
 };
