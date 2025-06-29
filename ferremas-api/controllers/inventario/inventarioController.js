@@ -100,3 +100,29 @@ exports.create = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+// Obtener sucursales que tienen stock suficiente para todos los productos del carrito
+exports.getSucursalesDisponibles = async (req, res) => {
+    const productos = req.body.productos;
+
+    if (!productos || !Array.isArray(productos) || productos.length === 0) {
+        return res.status(400).json({ message: 'Lista de productos inválida' });
+    }
+
+    try {
+        const condiciones = productos.map(p =>
+            `(SELECT sucursal_id FROM inventario WHERE producto_id = ${p.producto_id} AND cantidad >= ${p.cantidad})`
+        );
+
+        const query = `
+            SELECT s.* FROM sucursal s
+            WHERE s.sucursal_id IN (${condiciones.join(' INTERSECT ')})
+        `;
+
+        const [sucursales] = await db.query(query);
+        res.json(sucursales);
+    } catch (err) {
+        console.error('Error al buscar sucursales disponibles:', err);
+        res.status(500).json({ message: 'Error en el servidor' });
+    }
+};

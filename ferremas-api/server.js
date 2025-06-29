@@ -1,5 +1,10 @@
 const express = require('express');
 const cors = require('cors');
+const dotenv = require('dotenv');
+const { createPreference } = require('./controllers/pedidos/mercado_pago_paymet');
+const bodyParser = require('body-parser');
+dotenv.config();
+
 const app = express();
 
 // Middleware
@@ -36,6 +41,9 @@ app.use('/api/reportes', require('./routes/reportes/reportes'));
 
 // COMUNAS Y REGIONES
 app.use('/api', require('./routes/api/comunas'));
+
+// MERCADO PAGO
+app.post('/api/mercado_pago/preference', createPreference);
 
 const PORT = 4000;
 app.listen(PORT, () => {

@@ -1,53 +1,81 @@
-// src/components/checkout/PasoTipoEntrega.jsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import { useCart } from '../../context/CartContext';
 
-const PasoTipoEntrega = ({ tipoEntrega, setTipoEntrega }) => {
+const TipoEntregaPaso = ({ datosCliente, tipoEntrega, setTipoEntrega, sucursalSeleccionada, setSucursalSeleccionada }) => {
+    const { carrito } = useCart();
+    const [sucursalesDisponibles, setSucursalesDisponibles] = useState([]);
+
+    useEffect(() => {
+        const cargarSucursales = async () => {
+            try {
+                const response = await axios.post('http://localhost:4000/api/inventario/sucursales-disponibles', {
+                    productos: carrito.map(p => ({
+                        producto_id: p.producto_id,
+                        cantidad: p.cantidad
+                    }))
+                });
+                setSucursalesDisponibles(response.data);
+                if (!sucursalSeleccionada && response.data.length > 0) {
+                    setSucursalSeleccionada(response.data[0].sucursal_id);
+                }
+            } catch (error) {
+                console.error('Error al cargar sucursales disponibles:', error);
+            }
+        };
+
+        cargarSucursales();
+    }, [carrito, setSucursalSeleccionada]);
+
     return (
-        <div className="card p-4 mb-4 shadow-sm">
-        <h4 className="mb-3">¿Cómo quieres recibir tu pedido?</h4>
+        <div className="p-4 border rounded bg-light">
+            <h5 className="mb-3">Tipo de entrega</h5>
 
-        <div className="form-check mb-2">
-            <input
-            className="form-check-input"
-            type="radio"
-            name="tipoEntrega"
-            id="entregaDomicilio"
-            value="domicilio"
-            checked={tipoEntrega === 'domicilio'}
-            onChange={(e) => setTipoEntrega(e.target.value)}
-            />
-            <label className="form-check-label" htmlFor="entregaDomicilio">
-            Envío a domicilio
-            </label>
-        </div>
-
-        <div className="form-check">
-            <input
-            className="form-check-input"
-            type="radio"
-            name="tipoEntrega"
-            id="entregaSucursal"
-            value="sucursal"
-            checked={tipoEntrega === 'sucursal'}
-            onChange={(e) => setTipoEntrega(e.target.value)}
-            />
-            <label className="form-check-label" htmlFor="entregaSucursal">
-            Retiro en sucursal
-            </label>
-        </div>
-
-        {tipoEntrega === 'sucursal' && (
-            <div className="mt-3">
-            <label htmlFor="sucursal" className="form-label">Selecciona una sucursal</label>
-            <select className="form-select" id="sucursal">
-                <option>Sucursal Puerto Montt</option>
-                <option>Sucursal Osorno</option>
-                <option>Sucursal Valdivia</option>
-            </select>
+            <div className="form-check mb-2">
+                <input
+                    type="radio"
+                    id="envio"
+                    className="form-check-input"
+                    checked={tipoEntrega === 'Domicilio'}
+                    onChange={() => setTipoEntrega('Domicilio')}
+                />
+                <label htmlFor="envio" className="form-check-label">
+                    Envío a domicilio
+                </label>
             </div>
-        )}
+
+            <div className="form-check mb-3">
+                <input
+                    type="radio"
+                    id="retiro"
+                    className="form-check-input"
+                    checked={tipoEntrega === 'Sucursal'}
+                    onChange={() => setTipoEntrega('Sucursal')}
+                />
+                <label htmlFor="retiro" className="form-check-label">
+                    Retiro en sucursal
+                </label>
+            </div>
+
+            {tipoEntrega === 'Sucursal' && (
+                <div className="mb-3">
+                    <label className="form-label">Sucursal para retirar:</label>
+                    <select
+                        className="form-select"
+                        value={sucursalSeleccionada || ''}
+                        onChange={(e) => setSucursalSeleccionada(parseInt(e.target.value))}
+                    >
+                        {sucursalesDisponibles.map((sucursal) => (
+                            <option key={sucursal.sucursal_id} value={sucursal.sucursal_id}>
+                                {sucursal.nombre_sucursal} - {sucursal.direccion}, {sucursal.ciudad}
+                            </option>
+                        ))}
+                    </select>
+                    {sucursalesDisponibles.length === 0 && <p className="text-danger mt-2">No hay sucursales disponibles para todos los productos del carrito.</p>}
+                </div>
+            )}
         </div>
     );
 };
 
-export default PasoTipoEntrega;
+export default TipoEntregaPaso;

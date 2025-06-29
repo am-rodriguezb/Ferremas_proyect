@@ -74,7 +74,19 @@ const Home = () => {
                 {/* Aquí va el nuevo bloque */}
                 <div className="d-flex gap-3">
                     {usuario ? (
-                        <span className="text-dark fw-semibold">Hola, {usuario.username}</span>
+                        <>
+                            <span className="text-dark fw-semibold">Hola, {usuario.username}</span>
+                            <button
+                                className="btn btn-outline-danger btn-sm"
+                                onClick={() => {
+                                    localStorage.removeItem('token');
+                                    localStorage.removeItem('usuario');
+                                    window.location.reload();
+                                }}
+                            >
+                                Cerrar sesión
+                            </button>
+                        </>
                     ) : (
                         <button className="btn btn-outline-secondary" onClick={() => setModalAbierto(true)}>
                             Iniciar sesión
