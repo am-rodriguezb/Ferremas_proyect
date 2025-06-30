@@ -6,6 +6,7 @@ import Carrito from './views/cliente/Carrito';
 import Checkout from './views/cliente/Checkout';
 import Register from './views/cliente/Register';
 import Confirmacion from './views/cliente/Confirmacion'; // <-- Agregado
+import ComprobantePago from './views/cliente/ComprobantePago';
 
 const AppRouter = () => {
     return (
@@ -16,6 +17,7 @@ const AppRouter = () => {
                 <Route path="/checkout" element={<Checkout />} />
                 <Route path="/registro" element={<Register />} />
                 <Route path="/confirmacion" element={<Confirmacion />} /> {/* <-- Agregado */}
+                <Route path="/comprobante" element={<ComprobantePago />} />
                 {/* aquí luego irán las demás rutas por rol */}
             </Routes>
         </Router>

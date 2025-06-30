@@ -10,9 +10,9 @@ const createPreference = async (req, res) => {
         const mpPayload = {
             items,
             back_urls: {
-                success: "https://www.google.com",
-                failure: "https://www.google.com",
-                pending: "https://www.google.com"
+                success: "https://6e60-2800-150-143-d2b-3080-8e1b-cef6-d1e1.ngrok-free.app/comprobante",
+                failure: "https://6e60-2800-150-143-d2b-3080-8e1b-cef6-d1e1.ngrok-free.app/comprobante",
+                pending: "https://6e60-2800-150-143-d2b-3080-8e1b-cef6-d1e1.ngrok-free.app/comprobante"
             },
             auto_return: "approved"
         };
