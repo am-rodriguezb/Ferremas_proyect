@@ -51,13 +51,19 @@ const TipoEntregaPaso = ({ datosCliente, tipoEntrega, setTipoEntrega, sucursalSe
                     className="form-check-input"
                     checked={tipoEntrega === 'Sucursal'}
                     onChange={() => setTipoEntrega('Sucursal')}
+                    disabled={sucursalesDisponibles.length === 0}
                 />
                 <label htmlFor="retiro" className="form-check-label">
                     Retiro en sucursal
                 </label>
+                {(tipoEntrega === 'Sucursal' && sucursalesDisponibles.length === 0) && (
+                    <div className="text-danger small mt-2">
+                        No hay sucursales disponibles para todos los productos del carrito.
+                    </div>
+                )}
             </div>
 
-            {tipoEntrega === 'Sucursal' && (
+            {tipoEntrega === 'Sucursal' && sucursalesDisponibles.length > 0 && (
                 <div className="mb-3">
                     <label className="form-label">Sucursal para retirar:</label>
                     <select
@@ -71,7 +77,6 @@ const TipoEntregaPaso = ({ datosCliente, tipoEntrega, setTipoEntrega, sucursalSe
                             </option>
                         ))}
                     </select>
-                    {sucursalesDisponibles.length === 0 && <p className="text-danger mt-2">No hay sucursales disponibles para todos los productos del carrito.</p>}
                 </div>
             )}
         </div>

@@ -119,6 +119,121 @@ exports.delete = async (req, res) => {
     }
 };
 
+exports.crearPedidoConDetalles = async (req, res) => {
+    const {
+        cliente_id,
+        vendedor_id,
+        bodeguero_id,
+        tipo_entrega,
+        sucursal_id,
+        direccion_envio,
+        total,
+        productos, // array de { producto_id, cantidad, precio_unitario }
+        observaciones = ''
+    } = req.body;
+
+    const conn = await db.getConnection();
+    await conn.beginTransaction();
+
+    if (!['Retiro en tienda', 'Despacho a domicilio'].includes(tipo_entrega)) {
+        return res.status(400).json({ message: 'Tipo de entrega inválido' });
+    }
+    
+    try {
+        // Insertar el pedido
+        const ESTADO_PENDIENTE = 1; // O usa la consulta dinámica si prefieres
+
+        const [pedidoResult] = await conn.query(
+            `INSERT INTO pedido (cliente_id, vendedor_id, bodeguero_id, tipo_entrega, sucursal_id, direccion_envio, total, estado_actual, fecha, observaciones)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?)`,
+            [cliente_id, vendedor_id, bodeguero_id, tipo_entrega, sucursal_id, direccion_envio, total, ESTADO_PENDIENTE, observaciones]
+        );
+
+        const pedido_id = pedidoResult.insertId;
+
+        // Insertar los detalles del pedido
+        for (const prod of productos) {
+            await conn.query(
+                `INSERT INTO detalle_pedido (pedido_id, producto_id, cantidad, precio_unitario)
+                VALUES (?, ?, ?, ?)`,
+                [
+                    pedido_id,
+                    prod.producto_id,
+                    prod.cantidad,
+                    prod.precio_unitario
+                ]
+            );
+        }
+
+        await conn.commit();
+        res.status(201).json({ message: 'Pedido registrado con éxito', pedido_id });
+    } catch (error) {
+        await conn.rollback();
+        console.error('Error al registrar el pedido:', error);
+        res.status(500).json({ message: 'Error al registrar el pedido', error: error.message });
+        res.status(500).json({ message: 'Error al registrar el pedido', error });
+    } finally {
+        conn.release();
+    }
+};
+
+exports.confirmarPedido = async (req, res) => {
+    const { pedido_id, vendedor_id } = req.body;
+
+    try {
+        const [result] = await db.query(
+            `UPDATE pedido SET estado_actual = 'confirmado', vendedor_id = ? WHERE pedido_id = ? AND estado_actual = 'pendiente'`,
+            [vendedor_id, pedido_id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(400).json({ message: 'No se pudo confirmar. El pedido ya está confirmado o no existe.' });
+        }
+
+        res.json({ message: 'Pedido confirmado con éxito' });
+    } catch (err) {
+        console.error('Error al confirmar pedido:', err);
+        res.status(500).json({ message: 'Error en el servidor' });
+    }
+};
+
+exports.asignarBodeguero = async (req, res) => {
+    const { pedido_id, bodeguero_id } = req.body;
+
+    try {
+        const [result] = await db.query(
+            `UPDATE pedido SET bodeguero_id = ? WHERE pedido_id = ? AND estado_actual = 'confirmado'`,
+            [bodeguero_id, pedido_id]
+        );
+
+        if (result.affectedRows === 0) {
+            return res.status(400).json({ message: 'No se pudo asignar. El pedido no está confirmado o no existe.' });
+        }
+
+        res.json({ message: 'Bodeguero asignado correctamente al pedido.' });
+    } catch (error) {
+        console.error('Error al asignar bodeguero:', error);
+        res.status(500).json({ message: 'Error en el servidor' });
+    }
+};
+
+// Confirmar pedido (cambiar a estado_id 2)
+exports.confirmarPedidoPorId = async (req, res) => {
+    const pedido_id = req.params.id;
+    try {
+        await db.query(
+            "UPDATE pedido SET estado_actual = ? WHERE pedido_id = ?",
+            [2, pedido_id] // 2 = 'Aprobado por Vendedor'
+        );
+        res.json({ message: 'Pedido confirmado' });
+    } catch (err) {
+        console.error('Error al confirmar pedido:', err);
+        res.status(500).json({ message: 'Error al confirmar pedido' });
+    }
+};
+
+
+
 
 
 

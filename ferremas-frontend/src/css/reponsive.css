@@ -1,0 +1,17 @@
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2.5rem;
+    }
+
+    .hero-subtitle {
+        font-size: 1.1rem;
+    }
+
+    .navbar-brand-ferremas {
+        font-size: 1.5rem;
+    }
+
+    .search-input {
+        font-size: 14px;
+    }
+}

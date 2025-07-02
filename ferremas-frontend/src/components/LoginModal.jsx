@@ -1,7 +1,7 @@
 // src/components/LoginModal.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const LoginModal = ({ isOpen, onClose }) => {
     const [identificador, setIdentificador] = useState('');
@@ -15,30 +15,125 @@ const LoginModal = ({ isOpen, onClose }) => {
     const handleLogin = async (e) => {
         e.preventDefault();
         setError('');
+
+        // 1. Intentar login como cliente
         try {
             const res = await axios.post('http://localhost:4000/api/clientes/login', {
                 identificador,
                 password
             });
 
-            const { token, perfil, username, user_id } = res.data;
-
-            if (perfil && perfil !== 'Cliente') {
-                setError('Solo los clientes pueden iniciar sesión desde aquí.');
-                return;
-            }
-
-            // Guarda en localStorage
+            const { token, cliente_id, username, correo } = res.data;
             localStorage.setItem('token', token);
-            localStorage.setItem('perfil', perfil); // para verificar si es 'Cliente'
-            localStorage.setItem('username', username); // para mostrar saludo
+            localStorage.setItem('perfil', 'Cliente');
+            localStorage.setItem('username', username);
+            localStorage.setItem('cliente_id', cliente_id);
+            localStorage.setItem('correo', correo);
+            localStorage.setItem('usuario', JSON.stringify({ username }));
 
-
-            onClose(); // Cierra modal
-            window.location.reload(); // Refresca para que el Home se actualice
+            onClose();
+            window.location.reload();
+            return;
         } catch (err) {
-            setError('Credenciales incorrectas o usuario no encontrado');
-            console.error('Login error:', err);
+            // Si el error es "Cliente no encontrado" o "Contraseña incorrecta", intentamos como admin
+            if (
+                err.response &&
+                (err.response.data.message === 'Cliente no encontrado' ||
+                err.response.data.message === 'Contraseña incorrecta')
+            ) {
+                // 2. Intentar login como administrador
+                try {
+                    const res = await axios.post('http://localhost:4000/api/auth/login', {
+                        identificador,
+                        password
+                    });
+
+                    const { token, perfil, user_id, username, email } = res.data;
+                    localStorage.setItem('token', token);
+                    localStorage.setItem('perfil', perfil);
+                    localStorage.setItem('username', username);
+                    localStorage.setItem('user_id', user_id);
+                    localStorage.setItem('email', email);
+                    localStorage.setItem('usuario', JSON.stringify({ username }));
+
+                    onClose();
+                    if (perfil === 'Administrador') {
+                        navigate('/admin/dashboard');
+                    } else {
+                        // Si no es admin, intentamos como empleado
+                        try {
+                            const res = await axios.post('http://localhost:4000/api/usuarios/login', {
+                                identificador,
+                                password
+                            });
+
+                            const { token, perfil, user_id, username, email } = res.data;
+                            localStorage.setItem('token', token);
+                            localStorage.setItem('perfil', perfil);
+                            localStorage.setItem('username', username);
+                            localStorage.setItem('user_id', user_id);
+                            localStorage.setItem('email', email);
+                            localStorage.setItem('usuario', JSON.stringify({ username }));
+
+                            onClose();
+                            if (perfil === 'Vendedor') {
+                                navigate('/vendedor/dashboard');
+                            } else if (perfil === 'Bodeguero') {
+                                navigate('/bodega/dashboard');
+                            } else if (perfil === 'Contador') {
+                                navigate('/contador/dashboard');
+                            } else {
+                                setError('Perfil no reconocido.');
+                            }
+                            return;
+                        } catch (err2) {
+                            setError(
+                                err2.response?.data?.message ||
+                                'Credenciales inválidas o usuario no encontrado.'
+                            );
+                        }
+                    }
+                    return;
+                } catch (errAdmin) {
+                    // Si tampoco es admin, intentamos como empleado
+                    try {
+                        const res = await axios.post('http://localhost:4000/api/usuarios/login', {
+                            identificador,
+                            password
+                        });
+
+                        const { token, perfil, user_id, username, email } = res.data;
+                        localStorage.setItem('token', token);
+                        localStorage.setItem('perfil', perfil);
+                        localStorage.setItem('username', username);
+                        localStorage.setItem('user_id', user_id);
+                        localStorage.setItem('email', email);
+                        localStorage.setItem('usuario', JSON.stringify({ username }));
+
+                        onClose();
+                        if (perfil === 'Vendedor') {
+                            navigate('/vendedor/dashboard');
+                        } else if (perfil === 'Bodeguero') {
+                            navigate('/bodega/dashboard');
+                        } else if (perfil === 'Contador') {
+                            navigate('/contador/dashboard');
+                        } else {
+                            setError('Perfil no reconocido.');
+                        }
+                        return;
+                    } catch (err2) {
+                        setError(
+                            err2.response?.data?.message ||
+                            'Credenciales inválidas o usuario no encontrado.'
+                        );
+                    }
+                }
+            } else {
+                setError(
+                    err.response?.data?.message ||
+                    'Error al iniciar sesión.'
+                );
+            }
         }
     };
 

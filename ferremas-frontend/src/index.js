@@ -4,7 +4,11 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
-import './css/principal.css'; // Asegúrate de que esta ruta sea correcta
+import './css/principal.css';
+import './css/components.css';
+import './css/navbar.css';
+import './css/home.css';
+import './css/reponsive.css';
 
 
 const root = ReactDOM.createRoot(document.getElementById('root'));

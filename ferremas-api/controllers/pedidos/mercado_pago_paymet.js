@@ -10,9 +10,9 @@ const createPreference = async (req, res) => {
         const mpPayload = {
             items,
             back_urls: {
-                success: "https://6e60-2800-150-143-d2b-3080-8e1b-cef6-d1e1.ngrok-free.app/comprobante",
-                failure: "https://6e60-2800-150-143-d2b-3080-8e1b-cef6-d1e1.ngrok-free.app/comprobante",
-                pending: "https://6e60-2800-150-143-d2b-3080-8e1b-cef6-d1e1.ngrok-free.app/comprobante"
+            success: "https://1e57-2800-150-143-d2b-f97d-6ec0-d493-f257.ngrok-free.app/comprobante",
+            failure: "https://1e57-2800-150-143-d2b-f97d-6ec0-d493-f257.ngrok-free.app/comprobante",
+            pending: "https://1e57-2800-150-143-d2b-f97d-6ec0-d493-f257.ngrok-free.app/comprobante"
             },
             auto_return: "approved"
         };

@@ -45,6 +45,14 @@ app.use('/api', require('./routes/api/comunas'));
 // MERCADO PAGO
 app.post('/api/mercado_pago/preference', createPreference);
 
+// FACTURAS (para /api/facturas)
+app.use('/api/facturas', require('./routes/reportes/factura'));
+
+// FACTURAS (para /api/reportes/factura)
+const facturaRoutes = require('./routes/reportes/factura');
+app.use('/api/reportes/factura', facturaRoutes);
+
+
 const PORT = 4000;
 app.listen(PORT, () => {
     console.log(`API corriendo en http://localhost:${PORT}`);

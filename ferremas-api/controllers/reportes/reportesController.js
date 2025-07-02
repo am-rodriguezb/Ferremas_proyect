@@ -4,8 +4,8 @@ const db = require('../../database');
 exports.productosBajoStock = async (req, res) => {
     try {
         const [rows] = await db.query(`
-        SELECT * FROM vista_productos_stock
-        WHERE estado_stock = 'Bajo Stock' OR estado_stock = 'Sin Stock'
+            SELECT * FROM vista_productos_stock
+            WHERE estado_stock = 'Bajo Stock' OR estado_stock = 'Sin Stock'
         `);
         res.json(rows);
     } catch (err) {
@@ -17,8 +17,9 @@ exports.productosBajoStock = async (req, res) => {
 exports.resumenPedidos = async (req, res) => {
     try {
         const [rows] = await db.query(`
-        SELECT * FROM vista_pedidos_completa
-        ORDER BY fecha DESC
+            SELECT * FROM vista_pedidos_completa
+            WHERE MONTH(fecha) = MONTH(CURDATE()) AND YEAR(fecha) = YEAR(CURDATE())
+            ORDER BY fecha DESC
         `);
         res.json(rows);
     } catch (err) {
@@ -30,10 +31,9 @@ exports.resumenPedidos = async (req, res) => {
 exports.ventasTotales = async (req, res) => {
     try {
         const [rows] = await db.query(`
-        SELECT DATE_FORMAT(fecha, '%Y-%m') AS mes, SUM(total) AS total_ventas
-        FROM pedido
-        GROUP BY mes
-        ORDER BY mes DESC
+            SELECT SUM(total) AS total_ventas
+            FROM pedido
+            WHERE MONTH(fecha) = MONTH(CURDATE()) AND YEAR(fecha) = YEAR(CURDATE())
         `);
         res.json(rows);
     } catch (err) {

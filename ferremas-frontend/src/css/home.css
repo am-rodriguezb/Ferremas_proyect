@@ -1,0 +1,33 @@
+.hero-section {
+    background: linear-gradient(rgba(29, 53, 87, 0.8), rgba(69, 123, 157, 0.8)), url('https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+}
+
+.hero-title {
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: white;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+}
+
+.hero-subtitle {
+    font-size: 1.3rem;
+    color: white;
+    opacity: 0.95;
+    max-width: 600px;
+    margin: 1rem auto 2rem;
+}
+
+.btn-hero {
+    background: var(--primary);
+    border: none;
+    color: white;
+    padding: 15px 40px;
+    font-size: 1.1rem;
+    border-radius: 50px;
+}
